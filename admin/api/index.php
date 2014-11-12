@@ -1,6 +1,18 @@
 <?php
 require 'vendor/autoload.php';
 
+require_once(dirname(dirname(__FILE__)) . '/config/main_config.php');
+
+\Slim\Slim::registerAutoloader();
+
+function autoload($className) {
+    $file_path = BASE_DIR . '/api/controllers/' . $className . '.php';
+    if(file_exists($file_path)){
+        require_once($file_path);
+    }
+}
+spl_autoload_register('autoload');
+
 $app = new \Slim\Slim(array(
     'mode' => 'development'
 ));
@@ -29,15 +41,19 @@ $app->config('cookies.cipher_mode', MCRYPT_MODE_CBC);
 $app->config('cookies.lifetime', '30 minutes');
 $app->config('cookies.path', '/');
 
-$app->post('/login', function () use ($app) {
-    //Do login for admins here
+$auth_controller = new AuthController($app);
+
+$app->post('/login', function () use ($app, $auth_controller) {
+    $body = $app->request()->getBody();
+    $data = json_decode($body);
+    $auth_controller->login($data->email, $data->password);
 });
 
-$app->post('/logout', function () use ($app) {
+$app->post('/logout', function () use ($app, $auth_controller) {
     //Do logout for admins here
 });
 
-$app->post('/check', function () use ($app) {
+$app->post('/check', function () use ($app, $auth_controller) {
     //Check current user for auth
 });
 
